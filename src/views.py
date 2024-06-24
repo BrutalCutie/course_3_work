@@ -3,7 +3,7 @@ import os
 from collections import defaultdict
 from typing import Literal
 import datetime
-from config import OP_DATA_DIR, LOGS_DIR
+from config import OP_DATA_DIR, LOGS_DIR, USER_SETTINGS
 from src.utils import read_file_data
 
 import logging
@@ -16,7 +16,7 @@ logger_handler.setFormatter(logger_formatter)
 logger.addHandler(logger_handler)
 
 
-def get_operations_by_date_range(date: str, optional_flag: Literal["M", "W", "Y", "ALL"] = "M") -> list[dict]:
+def get_operations_by_date_range(date: str, optional_flag: str = "M") -> list[dict]:
 
     last_date = datetime.datetime.strptime(date, "%d.%m.%Y")
 
@@ -34,6 +34,9 @@ def get_operations_by_date_range(date: str, optional_flag: Literal["M", "W", "Y"
     tmp = []
 
     for op in op_data:
+        if op['Статус'] != "OK":
+            continue
+
         op_date = datetime.datetime.strptime(op["Дата операции"], "%d.%m.%Y %H:%M:%S")
 
         if start_date < op_date < last_date.replace(day=last_date.day+1):
@@ -42,7 +45,23 @@ def get_operations_by_date_range(date: str, optional_flag: Literal["M", "W", "Y"
     return tmp
 
 
-def get_expences_and_income(transactions_data):
+def post_events_response(date: str, optional_flag: Literal["M", "W", "Y", "ALL"] = "M") -> dict:
+
+    f_by_date_operations = get_operations_by_date_range(date, optional_flag)
+    expences, income = get_expences_income(f_by_date_operations)
+
+    currency_rates, stocks_prices = get_currency_stocks(USER_SETTINGS)
+
+    return {
+        'expences': expences,
+        "income": income,
+        "currency_rates": currency_rates,
+        "stock_prices": stocks_prices
+    }
+
+
+def get_expences_income(operations: list[dict]) -> tuple[dict, dict]:
+
     expences = {
         'total_amount': 0,
         "main": [],
@@ -56,13 +75,9 @@ def get_expences_and_income(transactions_data):
     expences_categories = defaultdict(int)
     income_categories = defaultdict(int)
 
-    for op in transactions_data:
-        op_sum = op['Сумма операции']
+    for op in operations:
+        op_sum = op['Сумма платежа']
         op_category = op['Категория']
-        op_state = op['Статус']
-
-        if op_state == 'FAILED':
-            continue
 
         if op_sum < 0:
             expences_categories[op_category] += abs(op_sum)
@@ -74,30 +89,47 @@ def get_expences_and_income(transactions_data):
         op_category, op_amount = op
         expences['total_amount'] += op_amount
 
-        expences['main'].append({'category': op_category, 'amount': round(op_amount, 2)})
+        if op_category in ['Переводы', "Наличные"]:
+            expences['transfers_and_cash'].append({'category': op_category, 'amount': round(op_amount)})
+        else:
+            expences['main'].append({'category': op_category, 'amount': round(op_amount)})
 
     for op in dict(income_categories).items():
         logger.debug(op)
         op_category, op_amount = op
         income['total_amount'] += op_amount
 
-        income['main'].append({'category': op_category, 'amount': round(op_amount, 2)})
-
-    return {
-        'expences': expences,
-        "income": income
-    }
+        income['main'].append({'category': op_category, 'amount': round(op_amount)})
+    # TODO максимум категорий = 7. Самые дорогие. Далее "остальное"
+    return expences, income
 
 
-def post_json_response():
-    pass
+def get_currency_stocks(file_path: str) -> tuple[list, list]:
+
+    with open(file_path, 'r', encoding='utf8') as user_file:
+        user_settings = json.load(user_file)
+
+    user_currencies = user_settings['user_currencies']
+    user_stocks = user_settings['user_stocks']
+    mock = 99.42  # TODO заменить затычку на данные с API
+    currency_list = []
+    stocks_list = []
+    for cur in user_currencies:
+        currency_list.append({"currency": cur, "rate": mock})
+
+    for stock in user_stocks:
+        stocks_list.append({'stock': stock, 'price': mock})
+
+    return currency_list, user_stocks
 
 
 if __name__ == '__main__':
-    result = get_operations_by_date_range("10.01.2018")
+
+    date = "10.02.2018"
+    result = get_operations_by_date_range(date, "ALL")
     with open('op.json', 'w', encoding='utf8') as file:
         json.dump(result, file, ensure_ascii=False, indent=4)
 
-    result2 = get_expences_and_income(result)
+    result2 = post_events_response(date, "ALL")
     with open('result.json', 'w', encoding='utf8') as file:
         json.dump(result2, file, ensure_ascii=False, indent=4)
