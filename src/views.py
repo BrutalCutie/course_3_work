@@ -16,6 +16,30 @@ logger_handler.setFormatter(logger_formatter)
 logger.addHandler(logger_handler)
 
 
+def post_events_response(date: str, optional_flag: Literal["M", "W", "Y", "ALL"] = "M") -> dict:
+    """
+    Главная функция.
+    Собирает данные(траты, поступления, стоимости валют и акций) из других функций
+    и возвращает готовый JSON ответ
+
+    :param date: Формат даты День.Месяц.Год
+    :param optional_flag: Отображение операций за месяц/неделю/год/всё время(до введенной даты)
+    :return: готовый JSON ответ (словарь)
+    """
+
+    f_by_date_operations = get_operations_by_date_range(date, optional_flag)
+    expences, income = get_expences_income(f_by_date_operations)
+
+    currency_rates, stocks_prices = get_currency_stocks(USER_SETTINGS)
+
+    return {
+        'expences': expences,
+        "income": income,
+        "currency_rates": currency_rates,
+        "stock_prices": stocks_prices
+    }
+
+
 def get_operations_by_date_range(date: str, optional_flag: str = "M") -> list[dict]:
     """
     Функция для фильтрации данных об операциях по дате.
@@ -60,44 +84,87 @@ def get_operations_by_date_range(date: str, optional_flag: str = "M") -> list[di
     return tmp
 
 
-def post_events_response(date: str, optional_flag: Literal["M", "W", "Y", "ALL"] = "M") -> dict:
+def get_expences_categories(expences_categories: dict) -> dict:
+    """
+    Функция принимает на вход словарь с тратами по всем категориям, сортирует по убыванию,
+    оставляет только 7 категорий, где были самые значительные траты. Все остальные траты
+    помещает в категорию "Остальное".
 
-    f_by_date_operations = get_operations_by_date_range(date, optional_flag)
-    expences, income = get_expences_income(f_by_date_operations)
+    :param expences_categories: Словарь с тратами. {Категория(str): Трата(int)}.
+    :return: Словарь. Данные о тратах отсортированные по категориям.
+    """
 
-    currency_rates, stocks_prices = get_currency_stocks(USER_SETTINGS)
+    total_amount = 0
+    transfers_and_cash = []
+    expences_main = []
+
+    for op in dict(expences_categories).items():
+
+        logger.debug(op)
+
+        op_category, op_amount = op
+        total_amount += op_amount
+
+        if op_category in ['Переводы', "Наличные"]:
+            transfers_and_cash.append({'category': op_category, 'amount': round(op_amount)})
+        else:
+            expences_main.append({'category': op_category, 'amount': round(op_amount)})
+
+    # Сортируем данные по убыванию
+    expences_main.sort(key=lambda x: x['amount'], reverse=True)
+    transfers_and_cash.sort(key=lambda x: x['amount'], reverse=True)
+
+    # Если категорий трат больше 7 - выделяем самые затратные. Остальным назначаем категорию "Остальное"
+    if len(expences_main) > 7:
+        other_cat_value = 0
+        while len(expences_main) > 7:
+            popped_dict: dict = expences_main.pop()
+            other_cat_value += popped_dict['amount']
+        expences_main.append({"category": "Остальное", "amount": other_cat_value})
 
     return {
-        'expences': expences,
-        "income": income,
-        "currency_rates": currency_rates,
-        "stock_prices": stocks_prices
+        "total_amount": total_amount,
+        "main": expences_main,
+        "transfers_and_cash": transfers_and_cash
     }
 
-def get_expences_categories(operations: dict) -> list[dict]:
-    pass
+
+def get_income_categories(income_categories: dict) -> dict:
+    """
+    Функция принимает на вход словарь с поступлениями по всем категориям, сортирует по убыванию.
+
+    :param income_categories: Словарь с поступлениями. {Категория(str): Поступление(int)}.
+    :return: Словарь. Данные о поступлениях отсортированные по категориям.
+    """
+
+    total_amount = 0
+    income_main = []
+
+    for op in dict(income_categories).items():
+        logger.debug(op)
+        op_category, op_amount = op
+        total_amount += op_amount
+
+        income_main.append({'category': op_category, 'amount': round(op_amount)})
+
+    income_main.sort(key=lambda x: x['amount'], reverse=True)
+
+    return {
+        'total_amount': total_amount,
+        "main": income_main
+    }
 
 
 def get_expences_income(operations: list[dict]) -> tuple[dict, dict]:
     """
+    Функция принимает на вход список словарей с данными о всех отсортированных по дате операциях.
 
     :param operations: Список словарей
-    :return:
+    :return: Словари (траты, поступления)
     """
 
-    expences = {
-        'total_amount': 0,
-        "main": [],
-        "transfers_and_cash": []
-    }
-
-    income = {
-        'total_amount': 0,
-        "main": []
-    }
-
-    expences_categories = defaultdict(int)
     income_categories = defaultdict(int)
+    expences_categories = defaultdict(int)
 
     for op in operations:
         op_sum = op['Сумма платежа']
@@ -108,41 +175,18 @@ def get_expences_income(operations: list[dict]) -> tuple[dict, dict]:
         else:
             income_categories[op_category] += abs(op_sum)
 
-    for op in dict(expences_categories).items():
-        logger.debug(op)
-        op_category, op_amount = op
-        expences['total_amount'] += op_amount
+    expences = get_expences_categories(expences_categories)
+    incomes = get_income_categories(income_categories)
 
-        if op_category in ['Переводы', "Наличные"]:
-            expences['transfers_and_cash'].append({'category': op_category, 'amount': round(op_amount)})
-        else:
-            expences['main'].append({'category': op_category, 'amount': round(op_amount)})
-
-    expences['main'].sort(key=lambda x: x['amount'], reverse=True)
-    expences['transfers_and_cash'].sort(key=lambda x: x['amount'], reverse=True)
-
-    if len(expences["main"]) > 7:
-        other_cat_value = 0
-        while len(expences["main"]) > 7:
-            popped_dict: dict = expences["main"].pop()
-            other_cat_value += popped_dict['amount']
-        expences['main'].append({"category": "Остальное", "amount": other_cat_value})
-
-    for op in dict(income_categories).items():
-        logger.debug(op)
-        op_category, op_amount = op
-        income['total_amount'] += op_amount
-
-        income['main'].append({'category': op_category, 'amount': round(op_amount)})
-
-    income['main'].sort(key=lambda x: x['amount'], reverse=True)
-
-    return expences, income
-
-
+    return expences, incomes
 
 
 def get_currency_stocks(file_path: str) -> tuple[list, list]:
+    """
+    Функция для определения курса валюты и цены акций, указанных в file_path настройках.
+    :param file_path: Путь до файла с настройками пользователя
+    :return: Списки. (курсы валюты, акции)
+    """
 
     with open(file_path, 'r', encoding='utf8') as user_file:
         user_settings = json.load(user_file)
@@ -159,15 +203,3 @@ def get_currency_stocks(file_path: str) -> tuple[list, list]:
         stocks_list.append({'stock': stock, 'price': mock})
 
     return currency_list, stocks_list
-
-
-if __name__ == '__main__':
-
-    date = "10.02.2018"
-    result = get_operations_by_date_range(date, "ALL")
-    with open('op.json', 'w', encoding='utf8') as file:
-        json.dump(result, file, ensure_ascii=False, indent=4)
-
-    result2 = post_events_response(date, "ALL")
-    with open('result.json', 'w', encoding='utf8') as file:
-        json.dump(result2, file, ensure_ascii=False, indent=4)
