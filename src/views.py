@@ -17,28 +17,43 @@ logger.addHandler(logger_handler)
 
 
 def get_operations_by_date_range(date: str, optional_flag: str = "M") -> list[dict]:
+    """
+    Функция для фильтрации данных об операциях по дате.
+    :param date: Формат даты День.Месяц.Год
+    :param optional_flag: Отображение операций за месяц/неделю/год/всё время(до введенной даты)
+    :return: Список словарей с данными об операциях
+    """
 
+    # Задаём последнюю дату операций
     last_date = datetime.datetime.strptime(date, "%d.%m.%Y")
 
+    # Задаём стартовую дату операций. По умолчанию с начала месяца
     start_date = last_date.replace(day=1)
 
     if optional_flag == "W":
+        # Берем данные с начала недели по день недели соответствующий указаной дате
         days_between = last_date.day - last_date.weekday()
         start_date = last_date.replace(day=days_between)
+
     elif optional_flag == 'Y':
+        # Берем данные с начала года по день соответствующий указаной дате
         start_date = last_date.replace(day=1, month=1)
+
     elif optional_flag == 'ALL':
+        # Берем все операции с начала до указанной даты
         start_date = last_date.replace(day=1, month=1, year=1)
 
-    op_data = read_file_data(OP_DATA_DIR)
-    tmp = []
+    op_data = read_file_data(OP_DATA_DIR)  # Считываем данные из файла
+    tmp = []  # Контейнер для операций попадающих под требование
 
+    # Отсекаем операции которые не были совершены и деньги не покинули счёт
     for op in op_data:
         if op['Статус'] != "OK":
             continue
 
         op_date = datetime.datetime.strptime(op["Дата операции"], "%d.%m.%Y %H:%M:%S")
 
+        # Если дата операции подходит под требование - добавляем в контейнер
         if start_date < op_date < last_date.replace(day=last_date.day+1):
             tmp.append(op)
 
@@ -59,8 +74,16 @@ def post_events_response(date: str, optional_flag: Literal["M", "W", "Y", "ALL"]
         "stock_prices": stocks_prices
     }
 
+def get_expences_categories(operations: dict) -> list[dict]:
+    pass
+
 
 def get_expences_income(operations: list[dict]) -> tuple[dict, dict]:
+    """
+
+    :param operations: Список словарей
+    :return:
+    """
 
     expences = {
         'total_amount': 0,
@@ -72,6 +95,7 @@ def get_expences_income(operations: list[dict]) -> tuple[dict, dict]:
         'total_amount': 0,
         "main": []
     }
+
     expences_categories = defaultdict(int)
     income_categories = defaultdict(int)
 
@@ -94,14 +118,28 @@ def get_expences_income(operations: list[dict]) -> tuple[dict, dict]:
         else:
             expences['main'].append({'category': op_category, 'amount': round(op_amount)})
 
+    expences['main'].sort(key=lambda x: x['amount'], reverse=True)
+    expences['transfers_and_cash'].sort(key=lambda x: x['amount'], reverse=True)
+
+    if len(expences["main"]) > 7:
+        other_cat_value = 0
+        while len(expences["main"]) > 7:
+            popped_dict: dict = expences["main"].pop()
+            other_cat_value += popped_dict['amount']
+        expences['main'].append({"category": "Остальное", "amount": other_cat_value})
+
     for op in dict(income_categories).items():
         logger.debug(op)
         op_category, op_amount = op
         income['total_amount'] += op_amount
 
         income['main'].append({'category': op_category, 'amount': round(op_amount)})
-    # TODO максимум категорий = 7. Самые дорогие. Далее "остальное"
+
+    income['main'].sort(key=lambda x: x['amount'], reverse=True)
+
     return expences, income
+
+
 
 
 def get_currency_stocks(file_path: str) -> tuple[list, list]:
@@ -120,7 +158,7 @@ def get_currency_stocks(file_path: str) -> tuple[list, list]:
     for stock in user_stocks:
         stocks_list.append({'stock': stock, 'price': mock})
 
-    return currency_list, user_stocks
+    return currency_list, stocks_list
 
 
 if __name__ == '__main__':
