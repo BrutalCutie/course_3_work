@@ -1,4 +1,3 @@
-import json
 import re
 
 from src.utils import read_file_data
@@ -27,7 +26,7 @@ def simple_searching(search_field: str, file_path: str = OP_DATA_DIR) -> list[di
     return tmp
 
 
-def search_by_persons(filepath: str = OP_DATA_DIR):
+def search_by_persons(filepath: str = OP_DATA_DIR) -> list[dict]:
     """
     Функция возвращает список операций физическим лицам
     :param filepath: путь до excel файла
