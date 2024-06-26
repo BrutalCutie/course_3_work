@@ -203,3 +203,9 @@ def get_currency_stocks(file_path: str = USER_SETTINGS) -> tuple[list, list]:
         stocks_list.append({'stock': stock, 'price': mock})
 
     return currency_list, stocks_list
+
+
+# if __name__ == '__main__':
+#     with open('op.json', 'w', encoding='utf8') as file:
+#
+#         json.dump(get_operations_by_date_range("01.02.2018", "ALL"), fp=file, ensure_ascii=False, indent=4)
