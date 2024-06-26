@@ -48,6 +48,3 @@ def search_by_persons(filepath: str = OP_DATA_DIR):
 
     return tmp
 
-
-if __name__ == '__main__':
-    print(json.dumps(search_by_persons(), ensure_ascii=False, indent=4))

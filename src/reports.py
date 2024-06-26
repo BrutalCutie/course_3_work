@@ -2,7 +2,12 @@ import datetime
 
 import pandas as pd
 
+from src.decorators import ReportSaver
+from config import OP_DATA_DIR
+from src.utils import get_dataframe_from_file
 
+
+@ReportSaver.to_excel()
 def spending_by_category(transactions: pd.DataFrame,
                          category: str,
                          date: str | None = None) -> pd.DataFrame:
