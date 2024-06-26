@@ -3,6 +3,10 @@ import os
 from collections import defaultdict
 from typing import Literal
 import datetime
+
+import numpy as np
+import pandas as pd
+
 from config import OP_DATA_DIR, LOGS_DIR, USER_SETTINGS
 from src.utils import read_file_data
 
@@ -67,7 +71,8 @@ def get_operations_by_date_range(date: str, optional_flag: str = "M") -> list[di
         # Берем все операции с начала до указанной даты
         start_date = last_date.replace(day=1, month=1, year=1)
 
-    op_data = read_file_data(OP_DATA_DIR)  # Считываем данные из файла
+    df = get_dataframe_from_file(OP_DATA_DIR)  # Считываем DataFrame из файла
+    op_data = get_json_from_dataframe(df)  # Считываем данные из DataFrame
     tmp = []  # Контейнер для операций попадающих под требование
 
     # Отсекаем операции которые не были совершены и деньги не покинули счёт
@@ -205,7 +210,19 @@ def get_currency_stocks(file_path: str = USER_SETTINGS) -> tuple[list, list]:
     return currency_list, stocks_list
 
 
-# if __name__ == '__main__':
-#     with open('op.json', 'w', encoding='utf8') as file:
-#
-#         json.dump(get_operations_by_date_range("01.02.2018", "ALL"), fp=file, ensure_ascii=False, indent=4)
+def get_dataframe_from_file(file_path: str) -> pd.DataFrame:
+    """
+    Функция принимает путь до файла и возвращает Dataframe чтением файла
+    :param file_path:
+    :return:
+    """
+    return pd.read_excel(file_path)
+
+
+def get_json_from_dataframe(df: pd.DataFrame) -> list[dict]:
+    """
+    Функция возвращает список словарей чтением DataFrame
+    :param df:
+    :return:
+    """
+    return df.replace({np.nan: None}).to_dict('records')
