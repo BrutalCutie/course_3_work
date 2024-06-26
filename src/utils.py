@@ -1,5 +1,3 @@
-import datetime
-import json
 import pandas as pd
 import numpy as np
 
@@ -15,3 +13,7 @@ def read_file_data(file_path: str):
     data_as_dict = data.to_dict('records')
 
     return data_as_dict
+
+
+def get_dataframe_from_file(file_path: str) -> pd.DataFrame:
+    return pd.read_excel(file_path).replace({np.nan: None})
