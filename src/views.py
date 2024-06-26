@@ -181,7 +181,7 @@ def get_expences_income(operations: list[dict]) -> tuple[dict, dict]:
     return expences, incomes
 
 
-def get_currency_stocks(file_path: str) -> tuple[list, list]:
+def get_currency_stocks(file_path: str = USER_SETTINGS) -> tuple[list, list]:
     """
     Функция для определения курса валюты и цены акций, указанных в file_path настройках.
     :param file_path: Путь до файла с настройками пользователя

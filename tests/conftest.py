@@ -176,3 +176,17 @@ def persons_search_result():
             "Сумма операции с округлением": 186.0
         }
     ]
+
+
+@fixture
+def cur_stocks_result():
+    return ([
+                {'currency': 'USD', 'rate': 99.42}, {'currency': 'EUR', 'rate': 99.42}
+            ],
+            [
+                {'stock': 'AAPL', 'price': 99.42},
+                {'stock': 'AMZN', 'price': 99.42},
+                {'stock': 'GOOGL', 'price': 99.42},
+                {'stock': 'MSFT', 'price': 99.42},
+                {'stock': 'TSLA', 'price': 99.42}]
+    )
