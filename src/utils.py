@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 
-def read_file_data(file_path: str):
+def read_file_data(file_path: str) -> list[dict]:
     """
     Функция для чтения excel файла и возвращения данных в виде списка словарей
     :param file_path: Путь до файла с данными

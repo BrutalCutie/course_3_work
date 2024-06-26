@@ -154,8 +154,8 @@ def get_expences_income(operations: list[dict]) -> tuple[dict, dict]:
     :return: Словари (траты, поступления)
     """
 
-    income_categories = defaultdict(int)
-    expences_categories = defaultdict(int)
+    income_categories: defaultdict = defaultdict(int)
+    expences_categories: defaultdict = defaultdict(int)
 
     for op in operations:
         op_sum = op["Сумма платежа"]
