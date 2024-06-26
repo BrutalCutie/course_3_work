@@ -2,10 +2,7 @@ import datetime
 
 import pandas as pd
 
-from src.decorators import ReportSaver
 
-
-@ReportSaver.to_excel()
 def spending_by_category(transactions: pd.DataFrame,
                          category: str,
                          date: str | None = None) -> pd.DataFrame:
@@ -20,7 +17,7 @@ def spending_by_category(transactions: pd.DataFrame,
 
     # Определняем дату в случае если её не передали. Берем текущую дату(сегодняшнюю)
     if not date:
-        date = str(datetime.datetime.now()).rsplit(".", 1)[0]
+        date = str(datetime.datetime.now()).rsplit(".", 1)[0]  # Отсекаем миллисекунды
         # Определяем "правый край" даты
         right_date = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
     else:
