@@ -13,3 +13,12 @@ def read_file_data(file_path: str) -> list[dict]:
     data_as_dict = data.to_dict("records")
 
     return data_as_dict
+
+
+def get_json_from_dataframe(df: pd.DataFrame) -> list[dict]:
+    """
+    Функция возвращает список словарей чтением DataFrame
+    :param df:
+    :return:
+    """
+    return df.replace({np.nan: None}).to_dict("records")

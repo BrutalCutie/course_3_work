@@ -1,21 +1,16 @@
 import datetime
 import json
-import logging
-import os
 from collections import defaultdict
 from typing import Literal
 
-import numpy as np
 import pandas as pd
 
-from config import LOGS_DIR, OP_DATA_DIR, USER_SETTINGS
+from config import OP_DATA_DIR, USER_SETTINGS
+from src.logger import Logger
+from src.utils import get_json_from_dataframe
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-logger_handler = logging.FileHandler(str(os.path.join(LOGS_DIR, "views.log")), mode="w", encoding="utf8")
-logger_formatter = logging.Formatter("%(name)s - %(funcName)s: %(message)s")
-logger_handler.setFormatter(logger_formatter)
-logger.addHandler(logger_handler)
+
+logger = Logger('view').on_duty()
 
 
 def post_events_response(date: str, optional_flag: Literal["M", "W", "Y", "ALL"] = "M") -> dict:
@@ -33,8 +28,12 @@ def post_events_response(date: str, optional_flag: Literal["M", "W", "Y", "ALL"]
     expences, income = get_expences_income(f_by_date_operations)
 
     currency_rates, stocks_prices = get_currency_stocks(USER_SETTINGS)
+    result = {"expences": expences, "income": income, "currency_rates": currency_rates, "stock_prices": stocks_prices}
 
-    return {"expences": expences, "income": income, "currency_rates": currency_rates, "stock_prices": stocks_prices}
+    logger.info('Возвращенные данные указаны ниже')
+    logger.info(result)
+
+    return result
 
 
 def get_operations_by_date_range(date: str, optional_flag: str = "M") -> list[dict]:
@@ -98,7 +97,7 @@ def get_expences_categories(expences_categories: dict) -> dict:
 
     for op in dict(expences_categories).items():
 
-        logger.debug(op)
+        logger.info(op)
 
         op_category, op_amount = op
         total_amount += op_amount
@@ -205,10 +204,5 @@ def get_dataframe_from_file(file_path: str) -> pd.DataFrame:
     return pd.read_excel(file_path)
 
 
-def get_json_from_dataframe(df: pd.DataFrame) -> list[dict]:
-    """
-    Функция возвращает список словарей чтением DataFrame
-    :param df:
-    :return:
-    """
-    return df.replace({np.nan: None}).to_dict("records")
+if __name__ == '__main__':
+    post_events_response("1.10.2018", 'W')
