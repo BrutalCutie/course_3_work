@@ -1,7 +1,7 @@
 import re
 
-from src.utils import read_file_data
 from config import OP_DATA_DIR
+from src.utils import read_file_data
 
 
 def simple_searching(search_field: str, file_path: str = OP_DATA_DIR) -> list[dict]:
@@ -17,8 +17,8 @@ def simple_searching(search_field: str, file_path: str = OP_DATA_DIR) -> list[di
 
     tmp = []
     for op in all_op_data:
-        op_category = op['Категория'] or " "
-        op_descr = op['Описание'] or " "
+        op_category = op["Категория"] or " "
+        op_descr = op["Описание"] or " "
 
         if search_field in op_category.lower() or search_field in op_descr.lower():
             tmp.append(op)
@@ -37,13 +37,12 @@ def search_by_persons(filepath: str = OP_DATA_DIR) -> list[dict]:
     op_data = read_file_data(filepath)
 
     for op in op_data:
-        if op['Категория'] != "Переводы":
+        if op["Категория"] != "Переводы":
             continue
 
         regex_pattern = r"\w* [\w]{1}\."
-        result = re.findall(regex_pattern, op['Описание'])
+        result = re.findall(regex_pattern, op["Описание"])
         if result:
             tmp.append(op)
 
     return tmp
-

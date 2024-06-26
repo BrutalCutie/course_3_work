@@ -1,5 +1,5 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def read_file_data(file_path: str):
@@ -10,6 +10,6 @@ def read_file_data(file_path: str):
     """
 
     data = pd.read_excel(file_path).replace({np.nan: None})
-    data_as_dict = data.to_dict('records')
+    data_as_dict = data.to_dict("records")
 
     return data_as_dict

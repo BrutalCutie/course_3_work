@@ -3,9 +3,7 @@ import datetime
 import pandas as pd
 
 
-def spending_by_category(transactions: pd.DataFrame,
-                         category: str,
-                         date: str | None = None) -> pd.DataFrame:
+def spending_by_category(transactions: pd.DataFrame, category: str, date: str | None = None) -> pd.DataFrame:
     """
     Функция возвращает траты по заданной категории за последние три месяца (от переданной даты)
 
@@ -24,14 +22,14 @@ def spending_by_category(transactions: pd.DataFrame,
         right_date = datetime.datetime.strptime(date, "%d.%m.%Y")
 
     # Определяем "левый край" даты, который соответсвует трём месяцем
-    left_date = right_date - datetime.timedelta(hours=24*90)
+    left_date = right_date - datetime.timedelta(hours=24 * 90)
 
     df = transactions
     # Определяем столбец с датами
-    df['Дата операции'] = pd.to_datetime(df['Дата операции'], format="%d.%m.%Y %H:%M:%S")
+    df["Дата операции"] = pd.to_datetime(df["Дата операции"], format="%d.%m.%Y %H:%M:%S")
 
     # Фильтруем сначала операции подходящие по дате. Далее по категории (разделен на 2 т.к. длинное выражение)
-    filtered_df = df.loc[df['Дата операции'].between(left_date.strftime("%Y-%m-%d"), right_date.strftime("%Y-%m-%d"))]
-    filtered_df = filtered_df.loc[df['Категория'] == category]
+    filtered_df = df.loc[df["Дата операции"].between(left_date.strftime("%Y-%m-%d"), right_date.strftime("%Y-%m-%d"))]
+    filtered_df = filtered_df.loc[df["Категория"] == category]
 
     return filtered_df
