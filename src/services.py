@@ -1,10 +1,10 @@
 import re
 
 from config import OP_DATA_DIR
+from src.my_logger import Logger
 from src.utils import read_file_data
-from logger import Logger
 
-logger = Logger('services').on_duty()
+logger = Logger("services").on_duty()
 
 
 def simple_searching(search_field: str, file_path: str = OP_DATA_DIR) -> list[dict]:

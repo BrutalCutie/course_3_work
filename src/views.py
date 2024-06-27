@@ -9,7 +9,7 @@ import pandas as pd
 import requests
 
 from config import OP_DATA_DIR, USER_SETTINGS
-from src.logger import Logger
+from src.my_logger import Logger
 from src.utils import get_json_from_dataframe
 
 dotenv.load_dotenv()
