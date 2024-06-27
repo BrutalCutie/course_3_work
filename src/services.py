@@ -2,6 +2,9 @@ import re
 
 from config import OP_DATA_DIR
 from src.utils import read_file_data
+from logger import Logger
+
+logger = Logger('services').on_duty()
 
 
 def simple_searching(search_field: str, file_path: str = OP_DATA_DIR) -> list[dict]:
@@ -22,6 +25,8 @@ def simple_searching(search_field: str, file_path: str = OP_DATA_DIR) -> list[di
 
         if search_field in op_category.lower() or search_field in op_descr.lower():
             tmp.append(op)
+
+    logger.debug(f"В поиск передано: {search_field}. Найдено совпадений: {len(tmp)}")
 
     return tmp
 
@@ -44,5 +49,7 @@ def search_by_persons(filepath: str = OP_DATA_DIR) -> list[dict]:
         result = re.findall(regex_pattern, op["Описание"])
         if result:
             tmp.append(op)
+
+    logger.debug(f"Найдено совпадений: {len(tmp)}")
 
     return tmp
