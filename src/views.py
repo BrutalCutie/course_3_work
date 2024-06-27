@@ -1,14 +1,18 @@
 import datetime
 import json
+import os
 from collections import defaultdict
 from typing import Literal
 
+import dotenv
 import pandas as pd
+import requests
 
 from config import OP_DATA_DIR, USER_SETTINGS
 from src.logger import Logger
 from src.utils import get_json_from_dataframe
 
+dotenv.load_dotenv()
 
 logger = Logger('view').on_duty()
 
@@ -180,19 +184,70 @@ def get_currency_stocks(file_path: str = USER_SETTINGS) -> tuple[list, list]:
 
     with open(file_path, "r", encoding="utf8") as user_file:
         user_settings = json.load(user_file)
+        user_currencies = user_settings["user_currencies"]
+        user_stocks = user_settings["user_stocks"]
 
-    user_currencies = user_settings["user_currencies"]
-    user_stocks = user_settings["user_stocks"]
-    mock = 99.42  # TODO заменить затычку на данные с API
     currency_list = []
     stocks_list = []
+
     for cur in user_currencies:
-        currency_list.append({"currency": cur, "rate": mock})
+        cur_price = get_currency_price(cur)
+        currency_list.append({"currency": cur, "rate": cur_price})
 
     for stock in user_stocks:
-        stocks_list.append({"stock": stock, "price": mock})
+        stock_price = get_stock_price(stock)
+        stocks_list.append({"stock": stock, "price": stock_price})
 
     return currency_list, stocks_list
+
+
+def get_currency_price(currency: str, into: str = 'RUB') -> None | float:
+    """
+    Функция для обращения по API запросу для получения цены валюты в рублёвом еквиваленте
+    API-сервис "Exchange Rates Data API" https://apilayer.com/marketplace/exchangerates_data-api
+
+    :param currency: Основная валюта
+    :param into: В какую валюту необходимо конвертировать
+    :return: Если ответа нет - None, в успешном случае float
+    """
+
+    api_key = os.getenv('CUR_API')
+    url = "https://api.apilayer.com/exchangerates_data/convert?"
+
+    params = {
+        'to': into,
+        'from': currency,
+        'amount': 1
+    }
+
+    response = requests.get(url, params=params, headers={'apikey': api_key})
+    if response.status_code != 200:
+        return None
+
+    return response.json().get('result')
+
+
+def get_stock_price(stock: str) -> None | float:
+    """
+    Функция получает цену акции в долларах по коду.
+    Сервис: https://finnhub.io/docs/api/quote
+
+    :param stock: Код акции
+    :return:
+    """
+
+    url = "https://api.finnhub.io/api/v1/quote?"
+    params = {
+        'symbol': stock,
+        'token': os.getenv("FINNHUB_API")
+    }
+
+    response = requests.get(url, params=params)
+
+    if response.status_code != 200:
+        return None
+
+    return response.json().get('c', 0)
 
 
 def get_dataframe_from_file(file_path: str) -> pd.DataFrame:
@@ -202,7 +257,3 @@ def get_dataframe_from_file(file_path: str) -> pd.DataFrame:
     :return:
     """
     return pd.read_excel(file_path)
-
-
-if __name__ == '__main__':
-    post_events_response("1.10.2018", 'W')
