@@ -14,7 +14,7 @@ from src.utils import get_json_from_dataframe
 
 dotenv.load_dotenv()
 
-logger = Logger('view').on_duty()
+logger = Logger("view").on_duty()
 
 
 def post_events_response(date: str, optional_flag: Literal["M", "W", "Y", "ALL"] = "M") -> dict:
@@ -34,7 +34,7 @@ def post_events_response(date: str, optional_flag: Literal["M", "W", "Y", "ALL"]
     currency_rates, stocks_prices = get_currency_stocks(USER_SETTINGS)
     result = {"expences": expences, "income": income, "currency_rates": currency_rates, "stock_prices": stocks_prices}
 
-    logger.info('Возвращенные данные указаны ниже')
+    logger.info("Возвращенные данные указаны ниже")
     logger.info(result)
 
     return result
@@ -201,7 +201,7 @@ def get_currency_stocks(file_path: str = USER_SETTINGS) -> tuple[list, list]:
     return currency_list, stocks_list
 
 
-def get_currency_price(currency: str, into: str = 'RUB') -> None | float:
+def get_currency_price(currency: str, into: str = "RUB") -> None | float:
     """
     Функция для обращения по API запросу для получения цены валюты в рублёвом еквиваленте
     API-сервис "Exchange Rates Data API" https://apilayer.com/marketplace/exchangerates_data-api
@@ -211,20 +211,17 @@ def get_currency_price(currency: str, into: str = 'RUB') -> None | float:
     :return: Если ответа нет - None, в успешном случае float
     """
 
-    api_key = os.getenv('CUR_API')
+    api_key = os.getenv("CUR_API")
     url = "https://api.apilayer.com/exchangerates_data/convert?"
 
-    params = {
-        'to': into,
-        'from': currency,
-        'amount': 1
-    }
+    params: dict[str, str | int] = {"to": into, "from": currency, "amount": 1}
 
-    response = requests.get(url, params=params, headers={'apikey': api_key})
+    response = requests.get(url, params=params, headers={"apikey": api_key})
     if response.status_code != 200:
         return None
 
-    return response.json().get('result')
+    result: float | None = response.json().get("result")
+    return result
 
 
 def get_stock_price(stock: str) -> None | float:
@@ -237,17 +234,16 @@ def get_stock_price(stock: str) -> None | float:
     """
 
     url = "https://api.finnhub.io/api/v1/quote?"
-    params = {
-        'symbol': stock,
-        'token': os.getenv("FINNHUB_API")
-    }
+    params = {"symbol": stock, "token": os.getenv("FINNHUB_API")}
 
     response = requests.get(url, params=params)
 
     if response.status_code != 200:
         return None
 
-    return response.json().get('c', 0)
+    result: float | None = response.json().get("c")
+
+    return result
 
 
 def get_dataframe_from_file(file_path: str) -> pd.DataFrame:

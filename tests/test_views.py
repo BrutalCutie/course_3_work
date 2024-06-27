@@ -1,9 +1,18 @@
+from unittest.mock import patch
+
 from src.views import (get_currency_stocks, get_expences_categories, get_expences_income, get_income_categories,
                        get_operations_by_date_range, post_events_response)
 
 
-def test_post_events_response(post_events_response_result):
+@patch("requests.get")
+def test_post_events_response(get_mock, post_events_response_result, post_events_response_result_none):
+    mock_file = get_mock.return_value
+
+    mock_file.status_code = 200
+    mock_file.json.return_value = {"result": 99.42, "c": 99.42}
     assert post_events_response("01.10.2018", "W") == post_events_response_result
+    mock_file.status_code = 400
+    assert post_events_response("01.10.2018", "W") == post_events_response_result_none
 
 
 def test_get_income_categories():
@@ -23,7 +32,13 @@ def test_get_expences_income(operations_m, expenses_income_results):
     )
 
 
-def test_get_currency_stocks(cur_stocks_result):
+@patch("requests.get")
+def test_get_currency_stocks(get_mock, cur_stocks_result):
+    mock_file = get_mock.return_value
+
+    mock_file.status_code = 200
+    mock_file.json.return_value = {"result": 99.42, "c": 99.42}
+
     assert get_currency_stocks() == cur_stocks_result
 
 

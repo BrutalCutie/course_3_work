@@ -11,7 +11,7 @@ class Logger:
         self.logger = logging.getLogger(logger_name)
         self.logger.setLevel(level)
         self.handler = logging.FileHandler(
-            str(os.path.join(save_dir, logger_name+".log")), mode=mode, encoding="utf8"
+            str(os.path.join(save_dir, logger_name + ".log")), mode=mode, encoding="utf8"
         )
         self.formatter = logging.Formatter("%(name)s - %(funcName)s: %(message)s")
 

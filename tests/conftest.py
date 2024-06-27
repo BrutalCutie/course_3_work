@@ -2591,3 +2591,31 @@ def post_events_response_result():
             {"stock": "TSLA", "price": 99.42},
         ],
     }
+
+
+@fixture
+def post_events_response_result_none():
+    return {
+        "expences": {
+            "total_amount": 91855.54,
+            "main": [
+                {"category": "Фастфуд", "amount": 492},
+                {"category": "Различные товары", "amount": 403},
+                {"category": "Дом и ремонт", "amount": 359},
+                {"category": "Связь", "amount": 250},
+                {"category": "Ж/д билеты", "amount": 200},
+                {"category": "Супермаркеты", "amount": 86},
+                {"category": "Транспорт", "amount": 66},
+            ],
+            "transfers_and_cash": [{"category": "Переводы", "amount": 90000}],
+        },
+        "income": {"total_amount": 0, "main": []},
+        "currency_rates": [{"currency": "USD", "rate": None}, {"currency": "EUR", "rate": None}],
+        "stock_prices": [
+            {"stock": "AAPL", "price": None},
+            {"stock": "AMZN", "price": None},
+            {"stock": "GOOGL", "price": None},
+            {"stock": "MSFT", "price": None},
+            {"stock": "TSLA", "price": None},
+        ],
+    }
